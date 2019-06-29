@@ -46,3 +46,6 @@ config.targets.forEach(target => {
 
   setInterval(() => checkTarget(target), target.interval * 1000);
 });
+
+// for now.sh:
+module.exports = (req, res) => res.json({ ok: true });
