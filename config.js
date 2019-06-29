@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'sh',
       url: 'https://home.solomaha.com/',
-      interval: 10 /** 60*/,
+      interval: 5 /** 60*/,
     },
   ],
   bot: {
