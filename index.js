@@ -7,7 +7,7 @@ if (process.env.NODE_ENV !== 'production') {
 const config = require('./config');
 
 const reportError = async (target, errorMessage) => {
-  axios.get(
+  return axios.get(
     `https://api.telegram.org/bot${config.bot.token}/sendMessage?chat_id=${config.bot.chatId}&text=`
     + encodeURIComponent(errorMessage),
   );

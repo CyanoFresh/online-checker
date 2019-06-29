@@ -2,8 +2,8 @@ module.exports = {
   targets: [
     {
       name: 'sh',
-      url: 'https://home.solomaha.com',
-      interval: 10 * 60,
+      url: 'https://home.solomaha.com/',
+      interval: 10 /** 60*/,
     },
   ],
   bot: {
