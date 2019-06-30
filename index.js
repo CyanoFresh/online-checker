@@ -6,46 +6,68 @@ if (process.env.NODE_ENV !== 'production') {
 
 const config = require('./config');
 
-const reportError = async (target, errorMessage) => {
-  return axios.get(
-    `https://api.telegram.org/bot${config.bot.token}/sendMessage?chat_id=${config.bot.chatId}&text=`
+const reportError = (target, errorMessage) => {
+  axios.get(
+    `https://api.telegram.org/bot${config.bot.token}/sendMessage?chat_id=${config.bot.chatId}&parse_mode=markdown&text=`
     + encodeURIComponent(errorMessage),
   );
 };
 
-const reportErrorCode = async (target, responseCode) => {
-  const errorMessage = `Service '${target.name}' has wrong response code: ${responseCode}`;
+const reportErrorCode = (target, responseCode) => {
+  const errorMessage = `*[online-checker]* Service '${target.name}' has wrong response code: ${responseCode}`;
 
   console.log(errorMessage);
 
-  return reportError(target, errorMessage);
+  reportError(target, errorMessage);
 };
 
 const checkTarget = async target => {
   console.log(`Checking '${target.name}'...`);
 
-  axios.get(target.url)
-    .then(response => {
-      const neededResponseCode = target.responseCode || 200;
+  try {
+    const response = await axios.get(target.url);
 
-      if (response.status !== neededResponseCode) {
-        return reportErrorCode(target, response.status);
-      }
+    const neededResponseCode = target.responseCode || 200;
 
-      console.log(`Checked '${target.name}' successfully`);
-    })
-    .catch(error => {
-      console.error(`Error for '${target.name}': `, error);
+    if (response.status !== neededResponseCode) {
+      reportErrorCode(target, response.status);
 
-      return reportError(target, `Cannot fetch url '${target.url}' for target '${target.name}'\nError: ${error.message}`);
-    });
+      return {
+        ok: false,
+        error: `Wrong response code: ${response.status}`,
+        target,
+      };
+    }
+
+    console.log(`Checked '${target.name}' successfully`);
+
+    return {
+      ok: true,
+      target,
+    };
+  } catch (error) {
+    console.error(`Error for '${target.name}': `, error);
+
+    reportError(target, `*[online-checker]* Cannot fetch url '${target.url}' for service '${target.name}'\nError: ${error.message}`);
+
+    return {
+      ok: false,
+      error,
+      target,
+    };
+  }
 };
 
-config.targets.forEach(target => {
-  console.log(`Initializing '${target.name}' with interval ${target.interval} s.`);
-
-  setInterval(() => checkTarget(target), target.interval * 1000);
-});
+async function check() {
+  return await Promise.all(config.targets.map(checkTarget));
+}
 
 // for now.sh:
-module.exports = (req, res) => res.json({ ok: true });
+module.exports = async (req, res) => {
+  const results = await check();
+
+  res.json({
+    ok: true,
+    results,
+  });
+};
